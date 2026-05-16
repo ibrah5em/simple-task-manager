@@ -4,6 +4,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\TaskViewController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -12,6 +13,11 @@ Route::get('/', function () {
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Smart views
+    Route::get('/today',    [TaskViewController::class, 'today'])->name('today');
+    Route::get('/inbox',    [TaskViewController::class, 'inbox'])->name('inbox');
+    Route::get('/upcoming', [TaskViewController::class, 'upcoming'])->name('upcoming');
 
     // Tasks — specific routes first, then {task} wildcard routes
     Route::get('/tasks', [TaskController::class, 'index'])->name('tasks.index');

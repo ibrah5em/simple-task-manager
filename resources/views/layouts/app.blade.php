@@ -631,6 +631,14 @@
         ->where('is_completed', false)
         ->whereDate('due_date', '<', today())
         ->count();
+    $todayCount = auth()->user()->tasks()
+        ->where('is_completed', false)
+        ->whereDate('due_date', '<=', today())
+        ->count();
+    $inboxCount = auth()->user()->tasks()
+        ->where('is_completed', false)
+        ->whereNull('due_date')
+        ->count();
 @endphp
 @endauth
 
@@ -648,6 +656,24 @@
             <a href="{{ route('dashboard') }}"
                class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }} mb-1">
                 <i class="bi bi-house"></i> Dashboard
+            </a>
+            <a href="{{ route('today') }}"
+               class="nav-link {{ request()->routeIs('today') ? 'active' : '' }} mb-1 d-flex align-items-center justify-content-between">
+                <span><i class="bi bi-calendar-check me-1"></i> Today</span>
+                @auth @if(($todayCount ?? 0) > 0)
+                <span class="badge rounded-pill" style="background:var(--purple-500);font-size:.65rem;">{{ $todayCount }}</span>
+                @endif @endauth
+            </a>
+            <a href="{{ route('inbox') }}"
+               class="nav-link {{ request()->routeIs('inbox') ? 'active' : '' }} mb-1 d-flex align-items-center justify-content-between">
+                <span><i class="bi bi-tray me-1"></i> Inbox</span>
+                @auth @if(($inboxCount ?? 0) > 0)
+                <span class="badge rounded-pill" style="background:var(--purple-500);font-size:.65rem;">{{ $inboxCount }}</span>
+                @endif @endauth
+            </a>
+            <a href="{{ route('upcoming') }}"
+               class="nav-link {{ request()->routeIs('upcoming') ? 'active' : '' }} mb-1">
+                <i class="bi bi-calendar-week me-1"></i> Upcoming
             </a>
             <a href="{{ route('tasks.index') }}"
                class="nav-link {{ request()->routeIs('tasks.*') ? 'active' : '' }} mb-1 d-flex align-items-center justify-content-between">
@@ -706,6 +732,27 @@
                    class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }} mb-1">
                     <i class="bi bi-house"></i>
                     <span class="nav-label">Dashboard</span>
+                </a>
+                <a href="{{ route('today') }}"
+                   class="nav-link {{ request()->routeIs('today') ? 'active' : '' }} mb-1">
+                    <i class="bi bi-calendar-check" style="flex-shrink:0;"></i>
+                    <span class="nav-label flex-grow-1">Today</span>
+                    @auth @if(($todayCount ?? 0) > 0)
+                    <span class="nav-label badge rounded-pill ms-auto" style="background:var(--purple-500);font-size:.65rem;">{{ $todayCount }}</span>
+                    @endif @endauth
+                </a>
+                <a href="{{ route('inbox') }}"
+                   class="nav-link {{ request()->routeIs('inbox') ? 'active' : '' }} mb-1">
+                    <i class="bi bi-tray" style="flex-shrink:0;"></i>
+                    <span class="nav-label flex-grow-1">Inbox</span>
+                    @auth @if(($inboxCount ?? 0) > 0)
+                    <span class="nav-label badge rounded-pill ms-auto" style="background:var(--purple-500);font-size:.65rem;">{{ $inboxCount }}</span>
+                    @endif @endauth
+                </a>
+                <a href="{{ route('upcoming') }}"
+                   class="nav-link {{ request()->routeIs('upcoming') ? 'active' : '' }} mb-1">
+                    <i class="bi bi-calendar-week" style="flex-shrink:0;"></i>
+                    <span class="nav-label">Upcoming</span>
                 </a>
                 <a href="{{ route('tasks.index') }}"
                    class="nav-link {{ request()->routeIs('tasks.*') ? 'active' : '' }} mb-1">
