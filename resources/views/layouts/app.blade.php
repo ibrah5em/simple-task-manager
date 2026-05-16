@@ -580,6 +580,16 @@
         }
         .table-wrap .task-table { min-width: 480px; }
 
+        /* ── Mobile touch targets ── */
+        @media (max-width: 767px) {
+            /* Bump btn-sm in task table so they're tappable */
+            .task-table .btn-sm { min-height: 36px; padding: .35rem .65rem; }
+            /* Filter bar inputs: slightly taller on small screens */
+            .form-control-sm, .form-select-sm { min-height: 36px; }
+            /* Page content padding reduction on very small screens */
+            main.flex-grow-1 { padding: 1rem !important; }
+        }
+
         /* ── Scrollbar ── */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -615,6 +625,15 @@
     </button>
 </header>
 
+@auth
+@php
+    $overdueCount = auth()->user()->tasks()
+        ->where('is_completed', false)
+        ->whereDate('due_date', '<', today())
+        ->count();
+@endphp
+@endauth
+
 {{-- Mobile Offcanvas Sidebar --}}
 <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarLabel">
     <div class="offcanvas-header">
@@ -631,8 +650,11 @@
                 <i class="bi bi-house"></i> Dashboard
             </a>
             <a href="{{ route('tasks.index') }}"
-               class="nav-link {{ request()->routeIs('tasks.*') ? 'active' : '' }} mb-1">
-                <i class="bi bi-list-task"></i> Tasks
+               class="nav-link {{ request()->routeIs('tasks.*') ? 'active' : '' }} mb-1 d-flex align-items-center justify-content-between">
+                <span><i class="bi bi-list-task me-1"></i> Tasks</span>
+                @auth @if(($overdueCount ?? 0) > 0)
+                <span class="badge rounded-pill" style="background:#ef4444;font-size:.65rem;">{{ $overdueCount }}</span>
+                @endif @endauth
             </a>
             <a href="{{ route('categories.index') }}"
                class="nav-link {{ request()->routeIs('categories.*') ? 'active' : '' }} mb-1">
@@ -687,8 +709,11 @@
                 </a>
                 <a href="{{ route('tasks.index') }}"
                    class="nav-link {{ request()->routeIs('tasks.*') ? 'active' : '' }} mb-1">
-                    <i class="bi bi-list-task"></i>
-                    <span class="nav-label">Tasks</span>
+                    <i class="bi bi-list-task" style="flex-shrink:0;"></i>
+                    <span class="nav-label flex-grow-1">Tasks</span>
+                    @auth @if(($overdueCount ?? 0) > 0)
+                    <span class="nav-label badge rounded-pill ms-auto" style="background:#ef4444;font-size:.65rem;">{{ $overdueCount }}</span>
+                    @endif @endauth
                 </a>
                 <a href="{{ route('categories.index') }}"
                    class="nav-link {{ request()->routeIs('categories.*') ? 'active' : '' }} mb-1">
