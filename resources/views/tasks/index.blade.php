@@ -14,6 +14,58 @@
     </a>
 </div>
 
+{{-- ── Search / Filter / Sort bar ── --}}
+<div class="glass-card p-3 mb-3 anim-fade-up">
+    <form method="GET" action="{{ route('tasks.index') }}" class="row g-2 align-items-end">
+        {{-- Search --}}
+        <div class="col-12 col-sm-4">
+            <input type="text" name="q" class="form-control form-control-sm"
+                   placeholder="Search tasks…" value="{{ $filters['q'] ?? '' }}">
+        </div>
+        {{-- Status filter --}}
+        <div class="col-6 col-sm-3">
+            <select name="status" class="form-select form-select-sm">
+                <option value="">All</option>
+                <option value="active"    {{ ($filters['status'] ?? '') === 'active'    ? 'selected' : '' }}>Active</option>
+                <option value="completed" {{ ($filters['status'] ?? '') === 'completed' ? 'selected' : '' }}>Completed</option>
+                <option value="overdue"   {{ ($filters['status'] ?? '') === 'overdue'   ? 'selected' : '' }}>Overdue</option>
+                <option value="week"      {{ ($filters['status'] ?? '') === 'week'      ? 'selected' : '' }}>Due this week</option>
+            </select>
+        </div>
+        {{-- Category filter --}}
+        @if($categories->isNotEmpty())
+        <div class="col-6 col-sm-3">
+            <select name="category" class="form-select form-select-sm">
+                <option value="">All categories</option>
+                @foreach($categories as $cat)
+                <option value="{{ $cat->id }}" {{ ($filters['category'] ?? '') == $cat->id ? 'selected' : '' }}>
+                    {{ $cat->name }}
+                </option>
+                @endforeach
+            </select>
+        </div>
+        @endif
+        {{-- Sort --}}
+        <div class="col-6 col-sm-2">
+            <select name="sort" class="form-select form-select-sm">
+                <option value="">Default</option>
+                <option value="priority" {{ ($filters['sort'] ?? '') === 'priority' ? 'selected' : '' }}>Priority</option>
+                <option value="due_asc"  {{ ($filters['sort'] ?? '') === 'due_asc'  ? 'selected' : '' }}>Due ↑</option>
+                <option value="due_desc" {{ ($filters['sort'] ?? '') === 'due_desc' ? 'selected' : '' }}>Due ↓</option>
+                <option value="newest"   {{ ($filters['sort'] ?? '') === 'newest'   ? 'selected' : '' }}>Newest</option>
+            </select>
+        </div>
+        <div class="col-6 col-sm-auto">
+            <button type="submit" class="btn btn-purple btn-sm w-100">Filter</button>
+        </div>
+        @if(array_filter($filters ?? []))
+        <div class="col-auto">
+            <a href="{{ route('tasks.index') }}" class="btn btn-ghost btn-sm">Clear</a>
+        </div>
+        @endif
+    </form>
+</div>
+
 @if($tasks->isEmpty())
     <div class="glass-card p-5 text-center anim-fade-up anim-delay-1">
         <i class="bi bi-inbox" style="font-size:3rem;color:var(--purple-400);opacity:.6;"></i>
@@ -42,6 +94,7 @@
                 </thead>
                 <tbody>
                     @foreach($tasks as $i => $task)
+                    @php $priorityColors = ['high'=>'#ef4444','medium'=>'#f59e0b','low'=>'#10b981']; @endphp
                     <tr class="anim-fade-up"
                         style="animation-delay: {{ ($i * 0.06) + 0.1 }}s;{{ $task->is_completed ? 'opacity:0.65;' : '' }}"
                         data-task-id="{{ $task->id }}">
@@ -65,11 +118,27 @@
                                    style="width:1.25rem;height:1.25rem;cursor:pointer;accent-color:var(--purple-500);">
                         </td>
 
-                        {{-- Title + optional due date hint --}}
+                        {{-- Title + priority badge + category chips + description hint --}}
                         <td>
-                            <span class="fw-semibold" style="color:var(--text);{{ $task->is_completed ? 'text-decoration:line-through;' : '' }}">
-                                {{ $task->title }}
-                            </span>
+                            <div class="d-flex align-items-center flex-wrap gap-1 mb-1">
+                                {{-- Priority badge --}}
+                                <span class="badge rounded-pill"
+                                      style="background:{{ $priorityColors[$task->priority] ?? '#8b5cf6' }};font-size:.65rem;padding:.25rem .55rem;">
+                                    {{ ucfirst($task->priority ?? 'medium') }}
+                                </span>
+                                {{-- Title --}}
+                                <span class="fw-semibold"
+                                      style="color:var(--text);{{ $task->is_completed ? 'text-decoration:line-through;' : '' }}">
+                                    {{ $task->title }}
+                                </span>
+                                {{-- Category chips --}}
+                                @foreach($task->categories as $cat)
+                                <span class="badge rounded-pill ms-1"
+                                      style="background:{{ $cat->color }}20;color:{{ $cat->color }};border:1px solid {{ $cat->color }}40;font-size:.65rem;">
+                                    {{ $cat->name }}
+                                </span>
+                                @endforeach
+                            </div>
                             @if($task->description)
                                 <div class="text-truncate d-none d-md-block"
                                      style="color:var(--text-muted);font-size:.8rem;max-width:260px;">
@@ -270,7 +339,7 @@
                 }
 
                 // Update title strikethrough
-                var titleSpan = row.querySelector('td:nth-child(3) .fw-semibold');
+                var titleSpan = row.querySelector('td .fw-semibold');
                 if (titleSpan) {
                     titleSpan.style.textDecoration = data.is_completed ? 'line-through' : '';
                 }

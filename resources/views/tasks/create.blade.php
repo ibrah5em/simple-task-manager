@@ -1,6 +1,26 @@
 @extends('layouts.app')
 
 @section('content')
+<style>
+    .cat-pill-label {
+        transition: border-color .15s, background .15s, color .15s;
+        font-size: .875rem;
+        font-weight: 500;
+        color: var(--text);
+        user-select: none;
+    }
+    .cat-pill-label:has(.cat-pill-check:checked) {
+        border-color: var(--purple-500) !important;
+        background: rgba(139,92,246,.12) !important;
+        color: var(--purple-700);
+    }
+    [data-bs-theme="dark"] .cat-pill-label:has(.cat-pill-check:checked) {
+        color: var(--purple-400);
+    }
+    .cat-pill-check {
+        display: none;
+    }
+</style>
 <div class="row justify-content-center">
     <div class="col-lg-7 col-md-9">
 
@@ -58,6 +78,34 @@
                         <div class="invalid-feedback d-block mt-1">{{ $message }}</div>
                     @enderror
                 </div>
+
+                <div class="mb-4">
+                    <label class="form-label">Priority</label>
+                    <select name="priority" class="form-select @error('priority') is-invalid @enderror">
+                        <option value="medium" {{ old('priority','medium')==='medium'?'selected':'' }}>Medium</option>
+                        <option value="high"   {{ old('priority')==='high'?'selected':'' }}>High</option>
+                        <option value="low"    {{ old('priority')==='low'?'selected':'' }}>Low</option>
+                    </select>
+                    @error('priority')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+
+                @if($categories->isNotEmpty())
+                <div class="mb-4">
+                    <label class="form-label">Categories</label>
+                    <div class="d-flex flex-wrap gap-2">
+                        @foreach($categories as $cat)
+                        <label class="d-flex align-items-center gap-1 px-3 py-1 rounded-pill cat-pill-label"
+                               style="cursor:pointer;border:1px solid var(--border);background:var(--surface-2);">
+                            <input type="checkbox" name="categories[]" value="{{ $cat->id }}"
+                                   {{ in_array($cat->id, old('categories', [])) ? 'checked' : '' }}
+                                   class="form-check-input cat-pill-check" style="margin-top:0;">
+                            <span style="background:{{ $cat->color }};width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0;"></span>
+                            {{ $cat->name }}
+                        </label>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
 
                 <div class="d-flex flex-column flex-sm-row gap-3 pt-2">
                     <button type="submit" class="btn-purple btn d-flex align-items-center justify-content-center gap-2">

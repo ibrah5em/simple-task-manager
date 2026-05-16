@@ -634,8 +634,8 @@
                class="nav-link {{ request()->routeIs('tasks.*') ? 'active' : '' }} mb-1">
                 <i class="bi bi-list-task"></i> Tasks
             </a>
-            <a href="#"
-               class="nav-link mb-1">
+            <a href="{{ route('categories.index') }}"
+               class="nav-link {{ request()->routeIs('categories.*') ? 'active' : '' }} mb-1">
                 <i class="bi bi-tag"></i> Categories
             </a>
             @auth
@@ -690,8 +690,8 @@
                     <i class="bi bi-list-task"></i>
                     <span class="nav-label">Tasks</span>
                 </a>
-                <a href="#"
-                   class="nav-link mb-1">
+                <a href="{{ route('categories.index') }}"
+                   class="nav-link {{ request()->routeIs('categories.*') ? 'active' : '' }} mb-1">
                     <i class="bi bi-tag"></i>
                     <span class="nav-label">Categories</span>
                 </a>
