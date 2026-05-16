@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Task;
+use App\Services\TaskInputParser;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -97,6 +98,17 @@ class TaskController extends Controller
         $this->authorize('update', $task);
         $task->update(['is_completed' => !$task->is_completed]);
         return response()->json(['is_completed' => $task->is_completed]);
+    }
+
+    public function parse(Request $request): JsonResponse
+    {
+        $request->validate(['input' => 'required|string|max:500']);
+
+        $categories = $request->user()->categories()->get(['id', 'name']);
+        $parser     = new TaskInputParser();
+        $result     = $parser->parse($request->input('input'), $categories);
+
+        return response()->json($result);
     }
 
     public function bulk(Request $request, string $action): JsonResponse

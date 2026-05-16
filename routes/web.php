@@ -22,6 +22,7 @@ Route::middleware('auth')->group(function () {
     // Tasks — specific routes first, then {task} wildcard routes
     Route::get('/tasks', [TaskController::class, 'index'])->name('tasks.index');
     Route::get('/tasks/create', [TaskController::class, 'create'])->name('tasks.create');
+    Route::post('/tasks/parse', [TaskController::class, 'parse'])->name('tasks.parse');
     Route::post('/tasks', [TaskController::class, 'store'])->name('tasks.store');
     Route::post('/tasks/bulk/{action}', [TaskController::class, 'bulk'])->name('tasks.bulk');
     Route::get('/tasks/{task}/edit', [TaskController::class, 'edit'])->name('tasks.edit');

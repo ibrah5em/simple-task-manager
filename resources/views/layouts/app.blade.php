@@ -620,6 +620,11 @@
         <span class="brand-icon"><i class="bi bi-check2-all"></i></span>
         Task Manager
     </a>
+    <button class="mobile-header-dark-btn" id="mobileQuickAdd"
+            data-bs-toggle="modal" data-bs-target="#quickAddModal"
+            title="Quick add (c)" style="margin-right:.25rem;">
+        <i class="bi bi-plus-lg"></i>
+    </button>
     <button class="mobile-header-dark-btn" id="mobileThemeToggle" title="Toggle dark mode">
         <i class="bi bi-moon-stars-fill" id="mobileThemeIcon"></i>
     </button>
@@ -952,6 +957,262 @@
         });
     });
 </script>
+
+{{-- Quick-Add Modal (global, available on every page) --}}
+@auth
+<div class="modal fade" id="quickAddModal" tabindex="-1" aria-labelledby="quickAddModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:540px;">
+        <div class="modal-content glass-card border-0" style="background:var(--surface);backdrop-filter:blur(20px);">
+            <div class="modal-header border-0 pb-0">
+                <div>
+                    <h5 class="modal-title fw-bold mb-0" id="quickAddModalLabel" style="color:var(--text)">
+                        <i class="bi bi-lightning-charge-fill me-1" style="color:var(--purple-500)"></i>Quick Add
+                    </h5>
+                    <p class="mb-0 mt-1" style="color:var(--text-muted);font-size:.8rem;">
+                        Try: <code style="color:var(--purple-500);background:transparent;">Buy milk tomorrow !high #shopping</code>
+                    </p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-2">
+                <div style="position:relative;">
+                    <input type="text" id="quickAddInput" class="form-control"
+                           placeholder="Task title… + date, !priority, #category"
+                           autocomplete="off" maxlength="500"
+                           style="padding-right:3rem;font-size:1rem;">
+                    <div id="quickAddSpinner" class="d-none" style="position:absolute;right:.85rem;top:50%;transform:translateY(-50%);">
+                        <span class="spinner-border spinner-border-sm" style="color:var(--purple-500)"></span>
+                    </div>
+                </div>
+
+                {{-- Live preview --}}
+                <div id="quickAddPreview" class="mt-3 d-none">
+                    <div class="glass-card-inner p-3" style="border-radius:12px;">
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            <span id="qaPreviewTitle" class="fw-semibold" style="color:var(--text)"></span>
+                            <span id="qaPreviewPriority" class="badge rounded-pill" style="font-size:.7rem;"></span>
+                            <span id="qaPreviewDate" class="badge rounded-pill" style="background:var(--purple-500)20;color:var(--purple-500);border:1px solid var(--purple-500)40;font-size:.7rem;"></span>
+                        </div>
+                        <div id="qaPreviewCategories" class="d-flex flex-wrap gap-1 mt-2"></div>
+                        <div id="qaPreviewUnknown" class="mt-2 d-none">
+                            <small style="color:#f59e0b;"><i class="bi bi-exclamation-triangle me-1"></i>New categories will be created: <span id="qaUnknownList"></span></small>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Validation error --}}
+                <div id="quickAddError" class="mt-2 d-none">
+                    <small class="text-danger" id="quickAddErrorMsg"></small>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0 d-flex justify-content-between align-items-center">
+                <small style="color:var(--text-muted);font-size:.75rem;">
+                    <kbd>Enter</kbd> to save &nbsp;·&nbsp; <kbd>Esc</kbd> to close
+                </small>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-ghost btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" id="quickAddSave" class="btn btn-purple btn-sm">
+                        <i class="bi bi-plus-circle me-1"></i>Add Task
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endauth
+
+@auth
+<script>
+(function () {
+    const CSRF  = document.querySelector('meta[name="csrf-token"]').content;
+    const modal = new bootstrap.Modal(document.getElementById('quickAddModal'));
+    const input = document.getElementById('quickAddInput');
+    let debounceTimer = null;
+    let lastParsed    = null;
+
+    // ── Open on 'c' when not in input/textarea ──────────────────────────────
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'c' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            const tag = document.activeElement.tagName.toLowerCase();
+            if (tag !== 'input' && tag !== 'textarea' && tag !== 'select') {
+                e.preventDefault();
+                openQuickAdd();
+            }
+        }
+    });
+
+    document.getElementById('quickAddModal').addEventListener('shown.bs.modal', function () {
+        input.focus();
+        input.select();
+    });
+
+    document.getElementById('quickAddModal').addEventListener('hidden.bs.modal', function () {
+        resetModal();
+    });
+
+    function openQuickAdd() {
+        modal.show();
+    }
+
+    // ── Live preview via debounced fetch ────────────────────────────────────
+    input.addEventListener('input', function () {
+        clearTimeout(debounceTimer);
+        const val = this.value.trim();
+        if (!val) { hidePreview(); return; }
+        debounceTimer = setTimeout(() => fetchPreview(val), 350);
+    });
+
+    function fetchPreview(val) {
+        document.getElementById('quickAddSpinner').classList.remove('d-none');
+        fetch('{{ route("tasks.parse") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN':  CSRF,
+                'Accept':        'application/json',
+            },
+            body: JSON.stringify({ input: val }),
+        })
+        .then(r => r.json())
+        .then(data => {
+            lastParsed = data;
+            renderPreview(data);
+        })
+        .catch(() => hidePreview())
+        .finally(() => document.getElementById('quickAddSpinner').classList.add('d-none'));
+    }
+
+    function renderPreview(d) {
+        if (!d.title && !d.due_date && d.priority === 'medium' && d.category_names.length === 0) {
+            hidePreview(); return;
+        }
+
+        document.getElementById('qaPreviewTitle').textContent = d.title || '(no title)';
+
+        // Priority chip
+        const pEl = document.getElementById('qaPreviewPriority');
+        const pColors = { high: '#ef4444', medium: '#f59e0b', low: '#10b981' };
+        const p = d.priority || 'medium';
+        pEl.textContent = p.charAt(0).toUpperCase() + p.slice(1);
+        pEl.style.background = (pColors[p] || '#8b5cf6') + '20';
+        pEl.style.color       = pColors[p] || '#8b5cf6';
+        pEl.style.border      = '1px solid ' + (pColors[p] || '#8b5cf6') + '40';
+
+        // Date chip
+        const dEl = document.getElementById('qaPreviewDate');
+        if (d.due_date_human) {
+            dEl.textContent = '📅 ' + d.due_date_human;
+            dEl.classList.remove('d-none');
+        } else {
+            dEl.classList.add('d-none');
+        }
+
+        // Category chips
+        const catEl = document.getElementById('qaPreviewCategories');
+        catEl.innerHTML = '';
+        (d.category_names || []).forEach(function (name) {
+            const span = document.createElement('span');
+            span.className   = 'badge rounded-pill';
+            span.textContent = '#' + name;
+            span.style.cssText = 'background:var(--purple-500)15;color:var(--purple-500);border:1px solid var(--purple-500)30;font-size:.7rem;';
+            catEl.appendChild(span);
+        });
+
+        // Unknown categories warning
+        const unkEl  = document.getElementById('qaPreviewUnknown');
+        const unkList = document.getElementById('qaUnknownList');
+        if (d.unknown_categories && d.unknown_categories.length > 0) {
+            unkList.textContent = d.unknown_categories.map(s => '#' + s).join(', ');
+            unkEl.classList.remove('d-none');
+        } else {
+            unkEl.classList.add('d-none');
+        }
+
+        document.getElementById('quickAddPreview').classList.remove('d-none');
+        document.getElementById('quickAddError').classList.add('d-none');
+    }
+
+    function hidePreview() {
+        document.getElementById('quickAddPreview').classList.add('d-none');
+        lastParsed = null;
+    }
+
+    // ── Save ────────────────────────────────────────────────────────────────
+    document.getElementById('quickAddSave').addEventListener('click', saveTask);
+
+    input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); saveTask(); }
+    });
+
+    function saveTask() {
+        const val = input.value.trim();
+        if (!val) {
+            showError('Please enter a task title.');
+            return;
+        }
+
+        const btn = document.getElementById('quickAddSave');
+        btn.disabled    = true;
+        btn.innerHTML   = '<span class="spinner-border spinner-border-sm me-1"></span>Saving…';
+
+        // Build FormData from lastParsed (if available) or send raw for server-side parse
+        const parsed = lastParsed || {};
+        const body   = new URLSearchParams();
+        body.append('_token', CSRF);
+        body.append('title',  parsed.title || val);
+        if (parsed.due_date) body.append('due_date', parsed.due_date.substring(0, 10));
+        if (parsed.priority)  body.append('priority', parsed.priority);
+        (parsed.categories || []).forEach(id => body.append('categories[]', id));
+        body.append('quick_add', '1');
+
+        fetch('{{ route("tasks.store") }}', {
+            method:  'POST',
+            headers: {
+                'Content-Type':  'application/x-www-form-urlencoded',
+                'X-CSRF-TOKEN':   CSRF,
+                'Accept':         'application/json, text/html',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: body.toString(),
+            redirect: 'manual',
+        })
+        .then(r => {
+            if (r.ok || r.status === 302 || r.type === 'opaqueredirect') {
+                modal.hide();
+                window.toast('Task added!', 'success');
+                // Reload if on a task list page
+                const listPages = ['/tasks', '/today', '/inbox', '/upcoming', '/dashboard'];
+                if (listPages.some(p => window.location.pathname.startsWith(p))) {
+                    setTimeout(() => window.location.reload(), 600);
+                }
+            } else {
+                return r.json().then(d => {
+                    const msgs = Object.values(d.errors || {}).flat();
+                    showError(msgs[0] || 'Could not save task.');
+                });
+            }
+        })
+        .catch(() => showError('Network error. Please try again.'))
+        .finally(() => {
+            btn.disabled  = false;
+            btn.innerHTML = '<i class="bi bi-plus-circle me-1"></i>Add Task';
+        });
+    }
+
+    function showError(msg) {
+        document.getElementById('quickAddErrorMsg').textContent = msg;
+        document.getElementById('quickAddError').classList.remove('d-none');
+    }
+
+    function resetModal() {
+        input.value = '';
+        hidePreview();
+        document.getElementById('quickAddError').classList.add('d-none');
+        lastParsed = null;
+    }
+})();
+</script>
+@endauth
 
 @stack('scripts')
 </body>
