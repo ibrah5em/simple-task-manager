@@ -17,7 +17,7 @@ class TaskViewController extends Controller
             ])
             ->where('is_completed', false)
             ->whereDate('due_date', '<=', today())
-            ->orderByRaw("FIELD(priority,'high','medium','low')")
+            ->orderByRaw("CASE priority WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 ELSE 4 END")
             ->orderBy('due_date')
             ->get();
 
@@ -36,7 +36,7 @@ class TaskViewController extends Controller
             ])
             ->where('is_completed', false)
             ->whereNull('due_date')
-            ->orderByRaw("FIELD(priority,'high','medium','low')")
+            ->orderByRaw("CASE priority WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 ELSE 4 END")
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -62,7 +62,7 @@ class TaskViewController extends Controller
             ->whereDate('due_date', '>', today())
             ->whereDate('due_date', '<=', today()->addDays(7))
             ->orderBy('due_date')
-            ->orderByRaw("FIELD(priority,'high','medium','low')")
+            ->orderByRaw("CASE priority WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 ELSE 4 END")
             ->get();
 
         // Group by due_date for the "grouped by day" display

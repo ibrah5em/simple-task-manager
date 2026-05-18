@@ -78,14 +78,16 @@ class Task extends Model
 
     public function scopeSort(Builder $query, string $sort = ''): Builder
     {
+        $priorityRank = "CASE priority WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 ELSE 4 END";
+
         return match ($sort) {
             'manual'    => $query->orderBy('position')->orderBy('id'),
-            'priority'  => $query->orderByRaw("FIELD(priority,'high','medium','low')"),
+            'priority'  => $query->orderByRaw($priorityRank),
             'due_asc'   => $query->orderByRaw("due_date IS NULL, due_date ASC"),
             'due_desc'  => $query->orderBy('due_date', 'desc'),
             'newest'    => $query->orderBy('created_at', 'desc'),
             default     => $query->orderByRaw("due_date IS NULL, due_date ASC")
-                                  ->orderByRaw("FIELD(priority,'high','medium','low')")
+                                  ->orderByRaw($priorityRank)
                                   ->orderBy('created_at', 'desc'),
         };
     }
