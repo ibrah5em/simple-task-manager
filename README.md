@@ -2,6 +2,8 @@
 
 A personal task management web app built on Laravel. Originally a course project for **Antakya Private University's Advanced Web Programming** module (instructors: Abdo Ibrahim Al-Khouri, Kenan Farhani), now being grown into a daily-use product.
 
+Live at **https://tasks-app.duckdns.org** — every push to `main` auto-deploys via GitHub Actions → GHCR → Watchtower (see [Deployment](#deployment) below). `main` is the single source of truth.
+
 The pristine course submission is preserved at tag [`submission-v1`](https://github.com/ibrah5em/simple-task-manager/releases/tag/submission-v1) — `git checkout submission-v1` if you ever need that exact snapshot.
 
 ## Features (shipped)
@@ -33,7 +35,7 @@ The pristine course submission is preserved at tag [`submission-v1`](https://git
 
 ## Roadmap
 
-Phases 1–2 are merged into `main`. Still pending:
+Phases 1–2 and Phase 8 (Deployment) are shipped. Still pending:
 
 | Phase | Theme |
 |---|---|
@@ -42,18 +44,21 @@ Phases 1–2 are merged into `main`. Still pending:
 | 5 | Email verification, password reset, Google OAuth (Socialite) |
 | 6 | AI chatbot (OpenRouter) + AI-powered quick-add |
 | 7 | Voice-to-text (Web Speech + Groq Whisper) |
-| 8 | Deployment |
 
 ## Tech Stack
 
-- **Backend:** Laravel (latest stable), PHP 8.x, MySQL
+- **Backend:** Laravel (latest stable), PHP 8.3, SQLite
 - **Frontend:** Blade + Bootstrap 5.3, vanilla JS
 - **Auth:** Laravel Breeze (Blade stack)
 - **Recurrence:** `simshaun/recurr`
 - **Markdown:** `league/commonmark`
 - **JS libs:** FullCalendar, SortableJS
+- **Container:** multi-stage `Dockerfile` → single image with nginx + php-fpm + supervisord (Alpine)
+- **CI/CD:** GitHub Actions builds & pushes `ghcr.io/ibrah5em/stm:latest`; Watchtower on the host rolls the container
 
 ## Local Setup
+
+### Native (PHP + artisan serve)
 
 ```bash
 # Install
@@ -63,13 +68,25 @@ npm install && npm run build
 # Configure
 cp .env.example .env
 php artisan key:generate
-# Set DB_* values in .env, then:
+# .env defaults to SQLite at database/database.sqlite — no DB server needed.
+# If the file doesn't exist yet:  touch database/database.sqlite
 php artisan migrate --seed
 
 # Run
 php artisan serve
 php artisan schedule:work   # second terminal — recurring task materialization
 ```
+
+### Docker (build the production image locally)
+
+```bash
+cp .env.example .env
+DOCKER_BUILDKIT=0 docker compose up -d --build
+docker compose exec stm php artisan migrate --seed   # first run only
+# Visit http://localhost — set ports in docker-compose.yml if needed
+```
+
+`docker-compose.yml` is the local dev / build-from-source variant. `docker-compose.prod.yml` is the production variant that pulls the prebuilt GHCR image (used on the deploy host).
 
 **Seeded users** (password `password123` for all):
 
@@ -80,23 +97,45 @@ php artisan schedule:work   # second terminal — recurring task materialization
 
 User1 has 4 example tasks; the rest are empty.
 
-## Scheduler Setup (Recurring Tasks & Reminders)
+> **Note on registration:** web registration is disabled — `/register` redirects to `/login`. Use the seeded users in dev, or create accounts with `php artisan tinker` (Docker: `docker compose exec stm php artisan tinker`). Login and password-reset POSTs are rate-limited (`throttle:10,1` and `throttle:6,1`).
 
-The app uses Laravel's scheduler for recurring task materialization and (in Phase 3) push/email reminders.
+## Scheduler (Recurring Tasks & Reminders)
 
-**Production** — add this single cron entry to the server's crontab (`crontab -e`):
+The app uses Laravel's scheduler for recurring task materialization and (Phase 3) push/email reminders. `tasks:materialize-recurring` runs daily at 02:00 to pre-generate the next 7 days of recurring task instances.
 
+- **Native dev**: `php artisan schedule:work` in a second terminal.
+- **Docker** (dev or prod): supervisord inside the image already runs `php artisan schedule:work` — nothing extra to wire up. See [`docker/supervisord.conf`](docker/supervisord.conf).
+
+## Deployment
+
+`main` is the single source of truth. Every push to `main` rebuilds and rolls the live container on the deploy host with **no SSH from CI** — the host's SSH stays LAN-only.
+
+```mermaid
+flowchart LR
+    DEV["git push origin main"] --> GH["GitHub Actions<br/>(build-and-deploy.yml)"]
+    GH -->|"buildx + gha cache"| GHCR[("ghcr.io/ibrah5em/stm<br/>:latest + :sha-&lt;short&gt;")]
+    GHCR -->|"polled every 60s"| WT["Watchtower<br/>(label-scoped)"]
+    WT -->|"docker pull + recreate"| STM["stm container<br/>(nginx + php-fpm + supervisord)"]
+    STM --> USERS(["users @ tasks-app.duckdns.org"])
+
+    classDef src fill:#e3f2fd,stroke:#1976d2,color:#000
+    classDef ci fill:#fff3e0,stroke:#f57c00,color:#000
+    classDef reg fill:#f3e5f5,stroke:#7b1fa2,color:#000
+    classDef run fill:#e8f5e9,stroke:#388e3c,color:#000
+
+    class DEV src
+    class GH,WT ci
+    class GHCR reg
+    class STM,USERS run
 ```
-* * * * * cd /path/to/simple-task-manager && php artisan schedule:run >> /dev/null 2>&1
-```
 
-**Development** — run in a second terminal alongside `php artisan serve`:
-
-```bash
-php artisan schedule:work
-```
-
-The schedule runs `tasks:materialize-recurring` daily at 02:00, which pre-generates the next 7 days of recurring task instances so they show up in the calendar view ahead of time.
+- **CI**: [`.github/workflows/build-and-deploy.yml`](.github/workflows/build-and-deploy.yml) — Buildx multi-stage build, gha cache, pushes `:latest` (what Watchtower follows) and `:sha-<short>` (immutable, for rollback).
+- **Registry**: [`ghcr.io/ibrah5em/stm`](https://github.com/ibrah5em/simple-task-manager/pkgs/container/stm) (public).
+- **Compose**: [`docker-compose.prod.yml`](docker-compose.prod.yml) on the host — pulls the GHCR image; opts the container into Watchtower via the `com.centurylinklabs.watchtower.enable=true` label. Same volumes / network pin / healthcheck as the dev compose.
+- **Rollout time**: ~3 min CI + up to 60 s for Watchtower's poll cycle.
+- **Rollback**: edit `image:` in `docker-compose.prod.yml` to `ghcr.io/ibrah5em/stm:sha-<short>` and `docker compose -f docker-compose.prod.yml up -d`.
+- **Persistence**: SQLite DB and Laravel `storage/` are on named Docker volumes (`stm_stm-db`, `stm_stm-storage`); they survive container rolls.
+- **First-time host setup**: `~/docker/stm/` needs only `docker-compose.prod.yml` + `.env` (production secrets). No source code on the host — the image carries everything.
 
 ## License
 
