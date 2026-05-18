@@ -1,0 +1,55 @@
+# Secrets — never bake into image
+.env
+.env.*
+!.env.example
+!.env.production.example
+auth.json
+
+# VCS / IDE
+.git
+.gitignore
+.gitattributes
+.editorconfig
+.idea
+.vscode
+.zed
+.nova
+.cursor
+.codex
+.claude
+.phpactor.json
+
+# Local installs (re-installed in build stages)
+node_modules
+vendor
+
+# Build artifacts (Vite stage rebuilds)
+public/build
+public/hot
+public/storage
+
+# Runtime state
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/pail
+storage/*.key
+database/*.sqlite
+database/*.sqlite-journal
+.phpunit.cache
+.phpunit.result.cache
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# CI / docs we don't need at runtime
+README.md
+docs
+
+# Docker meta (already in build context, but keep image lean)
+Dockerfile
+docker-compose.yml
+docker-compose.*.yml
+.dockerignore

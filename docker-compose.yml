@@ -1,0 +1,41 @@
+# docker-compose.yml — Simple Task Manager
+#
+# Lives under ~/docker/stm/ on x-server. The all-in-one image runs internal
+# nginx + php-fpm + supervisord; outer nginx-ssl proxies to it on :80 via the
+# shared docker_management network.
+#
+# Build: DOCKER_BUILDKIT=0 docker compose up -d --build
+# Logs:  docker compose logs -f stm
+
+services:
+  stm:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: stm:latest
+    container_name: stm
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      # SQLite + any future user-generated content
+      - stm-db:/var/www/html/database
+      # Application logs (handy for `docker exec` triage; not strictly required)
+      - stm-storage:/var/www/html/storage
+    networks:
+      docker_management:
+        ipv4_address: 172.18.0.91
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O- http://127.0.0.1/up || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  stm-db:
+  stm-storage:
+
+networks:
+  docker_management:
+    external: true
