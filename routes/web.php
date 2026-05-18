@@ -1,5 +1,8 @@
 <?php
 
+// Smoke test marker: confirms CI -> GHCR -> Watchtower pipeline rolls the
+// stm container on a push to main. Safe to leave; it has no runtime effect.
+
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
