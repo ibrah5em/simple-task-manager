@@ -1,14 +1,14 @@
 @extends('layouts.app')
 
 @push('head')
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css">
+{{-- FullCalendar v6 injects its own CSS via JS — no separate CSS file needed --}}
 <style>
     #calendar-wrap {
         border-radius: 16px;
-        overflow: hidden;
         background: var(--surface);
         border: 1px solid var(--border);
         padding: 1.25rem;
+        min-height: 500px;
     }
     .fc .fc-toolbar-title {
         font-size: 1.1rem;
@@ -117,34 +117,32 @@
     var calendarEl = document.getElementById('calendar');
     if (!calendarEl) return;
 
-    var feedUrl  = '{{ route('tasks.calendar') }}';
-    var parseUrl = '{{ route('tasks.parse') }}';
-    var storeUrl = '{{ route('tasks.store') }}';
+    if (typeof FullCalendar === 'undefined') {
+        calendarEl.innerHTML = '<p class="text-center py-5" style="color:var(--text-muted)">Calendar library failed to load. Please check your internet connection and refresh.</p>';
+        return;
+    }
+
+    var feedUrl   = '{{ route('tasks.calendar') }}';
     var csrfToken = (document.querySelector('meta[name="csrf-token"]') || {}).content || '';
 
-    var calendar = new FullCalendar.Calendar(calendarEl, {
+    var cal = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
         headerToolbar: {
-            left: 'prev,next today',
+            left:   'prev,next today',
             center: 'title',
-            right: 'dayGridMonth,dayGridWeek'
+            right:  'dayGridMonth,dayGridWeek',
         },
         height: 'auto',
-        eventSources: [{
-            url: feedUrl,
-            extraParams: function () {
-                var view = calendar.view;
-                return {
-                    start: view.currentStart.toISOString().split('T')[0],
-                    end:   view.currentEnd.toISOString().split('T')[0],
-                };
-            },
+        /* Simple URL event source — FullCalendar automatically appends
+           start, end, and timeZone query params on every fetch. */
+        events: {
+            url:     feedUrl,
             failure: function () {
                 if (typeof window.toast === 'function') {
-                    window.toast('Could not load tasks. Please refresh.', 'error');
+                    window.toast('Could not load tasks.', 'error');
                 }
             },
-        }],
+        },
         eventClick: function (info) {
             info.jsEvent.preventDefault();
             if (info.event.url) {
@@ -152,35 +150,35 @@
             }
         },
         dateClick: function (info) {
-            /* Pre-fill the quick-add modal with the clicked date */
             var modal = document.getElementById('quickAddModal');
             if (!modal) return;
 
             var input = modal.querySelector('#quick-add-input');
             if (input) {
-                /* Format date as "Mon DD" so the parser picks it up */
-                var d = new Date(info.dateStr + 'T00:00:00');
+                var d      = new Date(info.dateStr + 'T00:00:00');
                 var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
                 var label  = months[d.getMonth()] + ' ' + d.getDate();
                 input.value = label + ' ';
                 input.dispatchEvent(new Event('input'));
-                input.focus();
-                /* Move cursor to start so user types the title first */
-                input.setSelectionRange(0, 0);
             }
 
             var bsModal = bootstrap.Modal.getOrCreateInstance(modal);
             bsModal.show();
+
+            /* After modal opens, put cursor at start so user types the title */
+            modal.addEventListener('shown.bs.modal', function focusFix() {
+                if (input) { input.setSelectionRange(0, 0); input.focus(); }
+                modal.removeEventListener('shown.bs.modal', focusFix);
+            });
         },
         eventDidMount: function (info) {
             info.el.title = info.event.title;
         },
         dayMaxEvents: 4,
-        moreLinkClick: 'popover',
         nowIndicator: true,
     });
 
-    calendar.render();
+    cal.render();
 })();
 </script>
 @endpush
