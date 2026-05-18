@@ -41,6 +41,26 @@ php artisan boost:install
 
 Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
 
+## Scheduler Setup (Recurring Tasks & Reminders)
+
+The app uses Laravel's scheduler for recurring task materialisation and (later) push/email reminders.
+
+**Production** — add this single cron entry to the server's crontab (`crontab -e`):
+
+```
+* * * * * cd /path/to/simple-task-manager && php artisan schedule:run >> /dev/null 2>&1
+```
+
+**Development** — run in a second terminal alongside `php artisan serve`:
+
+```bash
+php artisan schedule:work
+```
+
+The schedule runs `tasks:materialize-recurring` daily at 02:00, which pre-generates the next 7 days of recurring task instances.
+
+---
+
 ## Contributing
 
 Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).

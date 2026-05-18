@@ -89,6 +89,19 @@
                     @error('priority')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
 
+                <div class="mb-4">
+                    <label class="form-label">Repeats</label>
+                    <select name="recurrence" class="form-select @error('recurrence') is-invalid @enderror">
+                        <option value="">Never</option>
+                        <option value="daily"    {{ old('recurrence')==='daily'    ? 'selected' : '' }}>Daily</option>
+                        <option value="weekdays" {{ old('recurrence')==='weekdays' ? 'selected' : '' }}>Weekdays (Mon–Fri)</option>
+                        <option value="weekly"   {{ old('recurrence')==='weekly'   ? 'selected' : '' }}>Weekly</option>
+                        <option value="monthly"  {{ old('recurrence')==='monthly'  ? 'selected' : '' }}>Monthly</option>
+                    </select>
+                    <div class="form-text" style="font-size:.78rem;">Weekly/Monthly use the due date above to determine the day.</div>
+                    @error('recurrence')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+
                 @if($categories->isNotEmpty())
                 <div class="mb-4">
                     <label class="form-label">Categories</label>

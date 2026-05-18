@@ -138,6 +138,28 @@
                                     {{ $cat->name }}
                                 </span>
                                 @endforeach
+                                {{-- Subtask progress --}}
+                                @if(($task->subtasks_count ?? 0) > 0)
+                                <span class="badge rounded-pill ms-1"
+                                      title="{{ $task->completed_subtasks_count }}/{{ $task->subtasks_count }} subtasks"
+                                      style="background:rgba(16,185,129,.12);color:#10b981;border:1px solid rgba(16,185,129,.25);font-size:.65rem;">
+                                    <i class="bi bi-check2-square me-1"></i>{{ $task->completed_subtasks_count }}/{{ $task->subtasks_count }}
+                                </span>
+                                @endif
+                                {{-- Recurrence indicator --}}
+                                @if($task->recurrence_rule)
+                                <span class="badge rounded-pill ms-1"
+                                      title="Recurring task"
+                                      style="background:rgba(124,58,237,.1);color:var(--purple-500);border:1px solid rgba(124,58,237,.25);font-size:.65rem;">
+                                    <i class="bi bi-arrow-repeat"></i>
+                                </span>
+                                @elseif($task->recurrence_parent_id)
+                                <span class="badge rounded-pill ms-1"
+                                      title="Recurring instance"
+                                      style="background:rgba(124,58,237,.06);color:var(--text-muted);border:1px solid rgba(124,58,237,.15);font-size:.65rem;">
+                                    <i class="bi bi-arrow-repeat"></i>
+                                </span>
+                                @endif
                             </div>
                             @if($task->description)
                                 <div class="text-truncate d-none d-md-block"
@@ -183,8 +205,11 @@
 
                         {{-- Actions --}}
                         <td class="text-end" style="white-space:nowrap;">
+                            @if(!$task->is_completed)
+                                <x-snooze-dropdown :task="$task" />
+                            @endif
                             <a href="{{ route('tasks.edit', $task) }}"
-                               class="btn btn-sm btn-ghost me-1"
+                               class="btn btn-sm btn-ghost mx-1"
                                title="Edit task">
                                 <i class="bi bi-pencil me-1"></i> Edit
                             </a>

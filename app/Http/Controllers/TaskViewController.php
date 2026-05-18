@@ -11,6 +11,10 @@ class TaskViewController extends Controller
     {
         $tasks = $request->user()->tasks()
             ->with('categories')
+            ->withCount([
+                'subtasks',
+                'subtasks as completed_subtasks_count' => fn($q) => $q->where('is_completed', true),
+            ])
             ->where('is_completed', false)
             ->whereDate('due_date', '<=', today())
             ->orderByRaw("FIELD(priority,'high','medium','low')")
@@ -26,6 +30,10 @@ class TaskViewController extends Controller
     {
         $tasks = $request->user()->tasks()
             ->with('categories')
+            ->withCount([
+                'subtasks',
+                'subtasks as completed_subtasks_count' => fn($q) => $q->where('is_completed', true),
+            ])
             ->where('is_completed', false)
             ->whereNull('due_date')
             ->orderByRaw("FIELD(priority,'high','medium','low')")
@@ -41,6 +49,10 @@ class TaskViewController extends Controller
     {
         $tasks = $request->user()->tasks()
             ->with('categories')
+            ->withCount([
+                'subtasks',
+                'subtasks as completed_subtasks_count' => fn($q) => $q->where('is_completed', true),
+            ])
             ->where('is_completed', false)
             ->whereDate('due_date', '>', today())
             ->whereDate('due_date', '<=', today()->addDays(7))

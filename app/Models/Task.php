@@ -2,14 +2,19 @@
 
 namespace App\Models;
 
+use App\Models\Subtask;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Task extends Model
 {
-    protected $fillable = ['title', 'description', 'due_date', 'is_completed', 'priority', 'user_id'];
+    protected $fillable = [
+        'title', 'description', 'due_date', 'is_completed', 'priority', 'user_id',
+        'recurrence_rule', 'recurrence_parent_id',
+    ];
 
     protected $casts = [
         'due_date'     => 'date',
@@ -24,6 +29,21 @@ class Task extends Model
     public function categories(): BelongsToMany
     {
         return $this->belongsToMany(Category::class);
+    }
+
+    public function subtasks(): HasMany
+    {
+        return $this->hasMany(Subtask::class)->orderBy('position')->orderBy('id');
+    }
+
+    public function recurrenceParent(): BelongsTo
+    {
+        return $this->belongsTo(Task::class, 'recurrence_parent_id');
+    }
+
+    public function recurrenceChildren(): HasMany
+    {
+        return $this->hasMany(Task::class, 'recurrence_parent_id');
     }
 
     public function scopeFilter(Builder $query, array $filters): Builder
