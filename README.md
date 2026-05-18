@@ -1,49 +1,88 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Simple Task Manager
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A personal task management web app built on Laravel. Originally a course project for **Antakya Private University's Advanced Web Programming** module (instructors: Abdo Ibrahim Al-Khouri, Kenan Farhani), now being grown into a daily-use product.
 
-## About Laravel
+The pristine course submission is preserved at tag [`submission-v1`](https://github.com/ibrah5em/simple-task-manager/releases/tag/submission-v1) — `git checkout submission-v1` if you ever need that exact snapshot.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Features (shipped)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+**Core app**
+- Email/password auth (Laravel Breeze).
+- Full task CRUD with per-user scoping enforced by policies.
+- Inline complete-toggle, bulk actions (complete / uncomplete / delete), snooze (tomorrow / next week / pick a date).
+- Pagination, search, filters (active / completed / overdue / due this week), sort.
+- Categories (many-to-many, per-user) with color chips.
+- Priority (low/med/high) with colored badges.
+- Profile page (name / email / phone / password).
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+**Daily-use power**
+- **Smart views**: Today, Inbox, Upcoming — surfaced in the sidebar with live count badges.
+- **Quick-add modal** (press `c` anywhere): natural-language parser extracts `!high`/`!med`/`!low`, `#category` tags, and date phrases (`tomorrow`, `next mon`, `5pm`, `jul 4`, `in 3 days`, …) from a single text field, with live preview.
+- **Recurring tasks** (RRULE / iCal via `simshaun/recurr`) — daily, weekdays, weekly, monthly. New instance auto-generated when the current one is completed; scheduler pre-materializes 7 days ahead.
+- **Subtasks / checklists** with drag-to-reorder and a `3/5` progress badge in lists.
+- **Markdown notes** in task descriptions (`league/commonmark`).
+- **Drag-to-reorder** tasks within a view (SortableJS).
+- **Calendar view** (FullCalendar) — click a day to quick-add, click a task to edit.
 
-## Learning Laravel
+**UI**
+- Collapsible sidebar (offcanvas on mobile, static ≥ md), state persisted to `localStorage`.
+- Dark mode via Bootstrap 5.3 `data-bs-theme`, defaults to system preference.
+- Toast notifications (server-side + client `window.toast(msg, type)`).
+- Empty states with CTA.
+- Button loading spinners.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Roadmap
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+The full multi-phase plan lives in `.claude/plan.md`. Phases 1–2 are merged into `main`. Still pending:
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+| Phase | Theme |
+|---|---|
+| 3 | PWA, browser push notifications, email reminders, mobile polish |
+| 4 | Dashboard analytics, admin user-management, Arabic/RTL i18n, attachments, time tracking, pomodoro, export/import |
+| 5 | Email verification, password reset, Google OAuth (Socialite) |
+| 6 | AI chatbot (OpenRouter) + AI-powered quick-add |
+| 7 | Voice-to-text (Web Speech + Groq Whisper) |
+| 8 | Deployment |
 
-## Agentic Development
+## Tech Stack
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+- **Backend:** Laravel (latest stable), PHP 8.x, MySQL
+- **Frontend:** Blade + Bootstrap 5.3, vanilla JS
+- **Auth:** Laravel Breeze (Blade stack)
+- **Recurrence:** `simshaun/recurr`
+- **Markdown:** `league/commonmark`
+- **JS libs:** FullCalendar, SortableJS
+
+## Local Setup
 
 ```bash
-composer require laravel/boost --dev
+# Install
+composer install
+npm install && npm run build
 
-php artisan boost:install
+# Configure
+cp .env.example .env
+php artisan key:generate
+# Set DB_* values in .env, then:
+php artisan migrate --seed
+
+# Run
+php artisan serve
+php artisan schedule:work   # second terminal — recurring task materialization
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+**Seeded users** (password `password123` for all):
+
+| Email | Role |
+|---|---|
+| admin@example.com | admin |
+| user1@example.com … user5@example.com | user |
+
+User1 has 4 example tasks; the rest are empty.
 
 ## Scheduler Setup (Recurring Tasks & Reminders)
 
-The app uses Laravel's scheduler for recurring task materialisation and (later) push/email reminders.
+The app uses Laravel's scheduler for recurring task materialization and (in Phase 3) push/email reminders.
 
 **Production** — add this single cron entry to the server's crontab (`crontab -e`):
 
@@ -57,22 +96,8 @@ The app uses Laravel's scheduler for recurring task materialisation and (later) 
 php artisan schedule:work
 ```
 
-The schedule runs `tasks:materialize-recurring` daily at 02:00, which pre-generates the next 7 days of recurring task instances.
-
----
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+The schedule runs `tasks:materialize-recurring` daily at 02:00, which pre-generates the next 7 days of recurring task instances so they show up in the calendar view ahead of time.
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+The Laravel framework itself is MIT-licensed. Application code in this repository is for personal/educational use.
