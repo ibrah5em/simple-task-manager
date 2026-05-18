@@ -45,6 +45,11 @@ class TaskViewController extends Controller
         return view('inbox', compact('tasks', 'inboxCount'));
     }
 
+    public function calendar(): View
+    {
+        return view('calendar');
+    }
+
     public function upcoming(Request $request): View
     {
         $tasks = $request->user()->tasks()

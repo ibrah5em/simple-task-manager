@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Task extends Model
 {
     protected $fillable = [
-        'title', 'description', 'due_date', 'is_completed', 'priority', 'user_id',
+        'title', 'description', 'due_date', 'is_completed', 'priority', 'position', 'user_id',
         'recurrence_rule', 'recurrence_parent_id',
     ];
 
@@ -79,6 +79,7 @@ class Task extends Model
     public function scopeSort(Builder $query, string $sort = ''): Builder
     {
         return match ($sort) {
+            'manual'    => $query->orderBy('position')->orderBy('id'),
             'priority'  => $query->orderByRaw("FIELD(priority,'high','medium','low')"),
             'due_asc'   => $query->orderByRaw("due_date IS NULL, due_date ASC"),
             'due_desc'  => $query->orderBy('due_date', 'desc'),

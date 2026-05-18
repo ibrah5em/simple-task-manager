@@ -8,6 +8,7 @@ use App\Services\TaskInputParser;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 
 class TaskController extends Controller
@@ -156,6 +157,46 @@ class TaskController extends Controller
         $result     = $parser->parse($request->input('input'), $categories);
 
         return response()->json($result);
+    }
+
+    public function reorder(Request $request): JsonResponse
+    {
+        $request->validate(['ids' => 'required|array', 'ids.*' => 'integer']);
+
+        $ownedIds = $request->user()->tasks()->pluck('id')->toArray();
+
+        foreach ($request->ids as $position => $id) {
+            if (in_array($id, $ownedIds)) {
+                Task::where('id', $id)->update(['position' => $position]);
+            }
+        }
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function calendarFeed(Request $request): JsonResponse
+    {
+        $start = $request->query('start') ? Carbon::parse($request->query('start')) : now()->startOfMonth();
+        $end   = $request->query('end')   ? Carbon::parse($request->query('end'))   : now()->endOfMonth();
+
+        $priorityColors = ['high' => '#ef4444', 'medium' => '#f59e0b', 'low' => '#10b981'];
+
+        $events = $request->user()->tasks()
+            ->whereNotNull('due_date')
+            ->whereBetween('due_date', [$start->toDateString(), $end->toDateString()])
+            ->get(['id', 'title', 'due_date', 'is_completed', 'priority'])
+            ->map(fn($t) => [
+                'id'              => $t->id,
+                'title'           => $t->title,
+                'start'           => $t->due_date->toDateString(),
+                'url'             => route('tasks.edit', $t),
+                'backgroundColor' => $t->is_completed ? '#6b7280' : ($priorityColors[$t->priority] ?? '#8b5cf6'),
+                'borderColor'     => $t->is_completed ? '#6b7280' : ($priorityColors[$t->priority] ?? '#8b5cf6'),
+                'textColor'       => '#ffffff',
+                'classNames'      => $t->is_completed ? ['fc-event-completed'] : [],
+            ]);
+
+        return response()->json($events);
     }
 
     public function bulk(Request $request, string $action): JsonResponse

@@ -56,10 +56,23 @@
                 </div>
 
                 <div class="mb-4">
-                    <label for="description" class="form-label">Description</label>
-                    <textarea id="description" name="description" rows="4"
-                              class="form-control @error('description') is-invalid @enderror"
-                              placeholder="Optional — add details about this task...">{{ old('description') }}</textarea>
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <label class="form-label mb-0">Description <span style="font-size:.75rem;color:var(--text-muted);font-weight:400;">Markdown supported</span></label>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn md-tab-btn active" data-tab="write"
+                                    style="font-size:.78rem;padding:.2rem .7rem;">Write</button>
+                            <button type="button" class="btn md-tab-btn" data-tab="preview"
+                                    style="font-size:.78rem;padding:.2rem .7rem;">Preview</button>
+                        </div>
+                    </div>
+                    <div id="md-write-pane">
+                        <textarea id="description" name="description" rows="5"
+                                  class="form-control @error('description') is-invalid @enderror"
+                                  placeholder="Supports **bold**, _italic_, - lists, `code`…">{{ old('description') }}</textarea>
+                    </div>
+                    <div id="md-preview-pane" class="d-none form-control"
+                         style="min-height:130px;background:var(--surface-2);overflow-y:auto;font-size:.92rem;line-height:1.65;">
+                    </div>
                     @error('description')
                         <div class="invalid-feedback d-block mt-1">{{ $message }}</div>
                     @enderror
@@ -134,3 +147,34 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
+<script>
+(function () {
+    var writePaneEl   = document.getElementById('md-write-pane');
+    var previewPaneEl = document.getElementById('md-preview-pane');
+    var textarea      = document.getElementById('description');
+
+    document.querySelectorAll('.md-tab-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            document.querySelectorAll('.md-tab-btn').forEach(function (b) { b.classList.remove('active'); });
+            this.classList.add('active');
+
+            if (this.dataset.tab === 'preview') {
+                var raw = textarea ? textarea.value : '';
+                previewPaneEl.innerHTML = typeof marked !== 'undefined'
+                    ? marked.parse(raw || '_Nothing to preview yet._')
+                    : '<em>Preview unavailable.</em>';
+                writePaneEl.classList.add('d-none');
+                previewPaneEl.classList.remove('d-none');
+            } else {
+                previewPaneEl.classList.add('d-none');
+                writePaneEl.classList.remove('d-none');
+                if (textarea) textarea.focus();
+            }
+        });
+    });
+})();
+</script>
+@endpush

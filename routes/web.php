@@ -19,6 +19,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/today',    [TaskViewController::class, 'today'])->name('today');
     Route::get('/inbox',    [TaskViewController::class, 'inbox'])->name('inbox');
     Route::get('/upcoming', [TaskViewController::class, 'upcoming'])->name('upcoming');
+    Route::get('/calendar', [TaskViewController::class, 'calendar'])->name('calendar');
 
     // Tasks — specific routes first, then {task} wildcard routes
     Route::get('/tasks', [TaskController::class, 'index'])->name('tasks.index');
@@ -26,6 +27,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/tasks/parse', [TaskController::class, 'parse'])->name('tasks.parse');
     Route::post('/tasks', [TaskController::class, 'store'])->name('tasks.store');
     Route::post('/tasks/bulk/{action}', [TaskController::class, 'bulk'])->name('tasks.bulk');
+    Route::post('/tasks/reorder', [TaskController::class, 'reorder'])->name('tasks.reorder');
+    Route::get('/tasks/calendar', [TaskController::class, 'calendarFeed'])->name('tasks.calendar');
     Route::get('/tasks/{task}/edit', [TaskController::class, 'edit'])->name('tasks.edit');
     Route::put('/tasks/{task}', [TaskController::class, 'update'])->name('tasks.update');
     Route::delete('/tasks/{task}', [TaskController::class, 'destroy'])->name('tasks.destroy');

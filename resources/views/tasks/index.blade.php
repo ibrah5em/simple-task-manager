@@ -49,6 +49,7 @@
         <div class="col-6 col-sm-2">
             <select name="sort" class="form-select form-select-sm">
                 <option value="">Default</option>
+                <option value="manual"   {{ ($filters['sort'] ?? '') === 'manual'   ? 'selected' : '' }}>Manual</option>
                 <option value="priority" {{ ($filters['sort'] ?? '') === 'priority' ? 'selected' : '' }}>Priority</option>
                 <option value="due_asc"  {{ ($filters['sort'] ?? '') === 'due_asc'  ? 'selected' : '' }}>Due ↑</option>
                 <option value="due_desc" {{ ($filters['sort'] ?? '') === 'due_desc' ? 'selected' : '' }}>Due ↓</option>
@@ -81,6 +82,7 @@
             <table class="task-table">
                 <thead>
                     <tr>
+                        <th style="width:28px;" class="drag-col {{ ($filters['sort'] ?? '') !== 'manual' ? 'd-none' : '' }}"></th>
                         <th style="width:40px;">
                             <input type="checkbox" id="selectAll"
                                    style="width:1.1rem;height:1.1rem;cursor:pointer;accent-color:var(--purple-500);">
@@ -95,9 +97,15 @@
                 <tbody>
                     @foreach($tasks as $i => $task)
                     @php $priorityColors = ['high'=>'#ef4444','medium'=>'#f59e0b','low'=>'#10b981']; @endphp
-                    <tr class="anim-fade-up"
+                    <tr class="anim-fade-up task-sortable-row"
                         style="animation-delay: {{ ($i * 0.06) + 0.1 }}s;{{ $task->is_completed ? 'opacity:0.65;' : '' }}"
                         data-task-id="{{ $task->id }}">
+
+                        {{-- Drag handle (shown only in manual sort mode) --}}
+                        <td class="drag-col {{ ($filters['sort'] ?? '') !== 'manual' ? 'd-none' : '' }}"
+                            style="width:28px;padding:.5rem .3rem;cursor:grab;color:var(--text-muted);text-align:center;">
+                            <i class="bi bi-grip-vertical task-drag-handle"></i>
+                        </td>
 
                         {{-- Select checkbox --}}
                         <td style="width:40px;">
@@ -164,7 +172,7 @@
                             @if($task->description)
                                 <div class="text-truncate d-none d-md-block"
                                      style="color:var(--text-muted);font-size:.8rem;max-width:260px;">
-                                    {{ $task->description }}
+                                    {{ Str::of($task->description)->markdown()->stripTags()->limit(100) }}
                                 </div>
                             @endif
                         </td>
@@ -310,8 +318,50 @@
 @endsection
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.4/Sortable.min.js"></script>
 <script>
 (function () {
+
+    /* ────────────────────────────────────────────
+       Drag-to-reorder (manual sort mode)
+    ──────────────────────────────────────────── */
+    var tbody = document.querySelector('.task-table tbody');
+    if (tbody && typeof Sortable !== 'undefined') {
+        Sortable.create(tbody, {
+            handle: '.task-drag-handle',
+            animation: 150,
+            onEnd: function () {
+                var ids = Array.from(tbody.querySelectorAll('.task-sortable-row'))
+                    .map(function (tr) { return parseInt(tr.dataset.taskId, 10); });
+
+                fetch('{{ route('tasks.reorder') }}', {
+                    method: 'POST',
+                    body: JSON.stringify({ ids: ids }),
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken(),
+                        'Accept': 'application/json',
+                    }
+                })
+                .then(function (r) {
+                    if (!r.ok) throw new Error();
+                    // Switch URL to manual sort so next page load respects new order
+                    var url = new URL(window.location.href);
+                    url.searchParams.set('sort', 'manual');
+                    window.history.replaceState({}, '', url.toString());
+                    // Show drag cols if hidden
+                    document.querySelectorAll('.drag-col').forEach(function (el) {
+                        el.classList.remove('d-none');
+                    });
+                })
+                .catch(function () {
+                    if (typeof window.toast === 'function') {
+                        window.toast('Could not save order. Please try again.', 'error');
+                    }
+                });
+            }
+        });
+    }
 
     /* ────────────────────────────────────────────
        Helpers

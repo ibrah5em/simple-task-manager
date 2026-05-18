@@ -608,6 +608,7 @@
             max-width: 360px;
         }
     </style>
+    @stack('head')
 </head>
 <body>
 
@@ -679,6 +680,10 @@
             <a href="{{ route('upcoming') }}"
                class="nav-link {{ request()->routeIs('upcoming') ? 'active' : '' }} mb-1">
                 <i class="bi bi-calendar-week me-1"></i> Upcoming
+            </a>
+            <a href="{{ route('calendar') }}"
+               class="nav-link {{ request()->routeIs('calendar') ? 'active' : '' }} mb-1">
+                <i class="bi bi-calendar3 me-1"></i> Calendar
             </a>
             <a href="{{ route('tasks.index') }}"
                class="nav-link {{ request()->routeIs('tasks.*') ? 'active' : '' }} mb-1 d-flex align-items-center justify-content-between">
@@ -758,6 +763,11 @@
                    class="nav-link {{ request()->routeIs('upcoming') ? 'active' : '' }} mb-1">
                     <i class="bi bi-calendar-week" style="flex-shrink:0;"></i>
                     <span class="nav-label">Upcoming</span>
+                </a>
+                <a href="{{ route('calendar') }}"
+                   class="nav-link {{ request()->routeIs('calendar') ? 'active' : '' }} mb-1">
+                    <i class="bi bi-calendar3" style="flex-shrink:0;"></i>
+                    <span class="nav-label">Calendar</span>
                 </a>
                 <a href="{{ route('tasks.index') }}"
                    class="nav-link {{ request()->routeIs('tasks.*') ? 'active' : '' }} mb-1">
@@ -1181,7 +1191,7 @@
                 modal.hide();
                 window.toast('Task added!', 'success');
                 // Reload if on a task list page
-                const listPages = ['/tasks', '/today', '/inbox', '/upcoming', '/dashboard'];
+                const listPages = ['/tasks', '/today', '/inbox', '/upcoming', '/calendar', '/dashboard'];
                 if (listPages.some(p => window.location.pathname.startsWith(p))) {
                     setTimeout(() => window.location.reload(), 600);
                 }
