@@ -286,6 +286,26 @@
         .dark-toggle-btn:hover {
             background: rgba(255,255,255,0.22);
         }
+        .logout-circle-btn {
+            background: rgba(239,68,68,0.2);
+            border: 1px solid rgba(239,68,68,0.3);
+            color: rgba(255,255,255,.9);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            cursor: pointer;
+            flex-shrink: 0;
+            padding: 0;
+            transition: background .15s;
+        }
+        .logout-circle-btn:hover {
+            background: rgba(239,68,68,0.4);
+            color: #fff;
+        }
         .logout-btn {
             background: rgba(239,68,68,0.2);
             border: 1px solid rgba(239,68,68,0.3);
@@ -711,15 +731,10 @@
         </nav>
     </div>
     <div class="offcanvas-footer px-2 py-3">
-        @auth
-        <div class="user-name mb-2">
-            <i class="bi bi-person-circle me-1"></i>{{ auth()->user()->name }}
-        </div>
-        @endauth
-        <form method="POST" action="{{ route('logout') }}">
+        <form method="POST" action="{{ route('logout') }}" class="m-0">
             @csrf
-            <button type="submit" class="logout-btn">
-                <i class="bi bi-box-arrow-right"></i> Logout
+            <button type="submit" class="logout-circle-btn" title="Logout">
+                <i class="bi bi-box-arrow-right"></i>
             </button>
         </form>
     </div>
@@ -799,23 +814,17 @@
             </nav>
 
             <div class="sidebar-footer">
-                @auth
-                <div class="user-name">
-                    <i class="bi bi-person-circle me-1"></i>{{ auth()->user()->name }}
-                </div>
-                @endauth
-                <div class="d-flex align-items-center gap-2 mb-2">
+                <div class="d-flex align-items-center gap-2">
                     <button class="dark-toggle-btn" id="desktopThemeToggle" title="Toggle dark mode">
                         <i class="bi bi-moon-stars-fill" id="desktopThemeIcon"></i>
                     </button>
+                    <form method="POST" action="{{ route('logout') }}" class="m-0">
+                        @csrf
+                        <button type="submit" class="logout-circle-btn" title="Logout">
+                            <i class="bi bi-box-arrow-right"></i>
+                        </button>
+                    </form>
                 </div>
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button type="submit" class="logout-btn">
-                        <i class="bi bi-box-arrow-right"></i>
-                        <span class="nav-label">Logout</span>
-                    </button>
-                </form>
             </div>
 
         </div>

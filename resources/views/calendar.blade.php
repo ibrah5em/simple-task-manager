@@ -37,12 +37,14 @@
         color: #fff !important;
     }
     .fc th {
-        color: var(--text-muted);
         font-size: .8rem;
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: .04em;
         padding: .5rem 0 !important;
+    }
+    .fc .fc-col-header-cell-cushion {
+        color: var(--text-muted) !important;
     }
     .fc .fc-daygrid-day {
         border-color: var(--border) !important;
@@ -87,6 +89,33 @@
         font-weight: 600;
     }
     [data-bs-theme="dark"] .fc .fc-daygrid-day {
+        background: transparent;
+    }
+    [data-bs-theme="dark"] .fc-theme-standard td,
+    [data-bs-theme="dark"] .fc-theme-standard th {
+        border-color: rgba(167,139,250,0.18) !important;
+    }
+    [data-bs-theme="dark"] .fc-scrollgrid,
+    [data-bs-theme="dark"] .fc-scrollgrid-section > * {
+        border-color: rgba(167,139,250,0.18) !important;
+    }
+    [data-bs-theme="dark"] .fc .fc-col-header-cell {
+        background: rgba(20,14,45,0.6);
+    }
+    [data-bs-theme="dark"] .fc .fc-daygrid-day-frame {
+        background: transparent;
+    }
+    [data-bs-theme="dark"] .fc-day-other .fc-daygrid-day-top {
+        opacity: .35;
+    }
+    [data-bs-theme="dark"] .fc-day-other {
+        background: rgba(0,0,0,0.15) !important;
+    }
+    [data-bs-theme="dark"] .fc .fc-daygrid-body,
+    [data-bs-theme="dark"] .fc .fc-scrollgrid-sync-table {
+        background: transparent;
+    }
+    [data-bs-theme="dark"] .fc .fc-scroller {
         background: transparent;
     }
 </style>
