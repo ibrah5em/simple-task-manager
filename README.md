@@ -33,7 +33,7 @@ The pristine course submission is preserved at tag [`submission-v1`](https://git
 
 ## Roadmap
 
-The full multi-phase plan lives in `.claude/plan.md`. Phases 1–2 are merged into `main`. Still pending:
+Phases 1–2 are merged into `main`. Still pending:
 
 | Phase | Theme |
 |---|---|
