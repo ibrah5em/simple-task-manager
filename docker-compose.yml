@@ -1,8 +1,10 @@
-# docker-compose.yml — Simple Task Manager
+# docker-compose.yml — Simple Task Manager (local dev / build-from-source)
 #
-# Lives under ~/docker/stm/ on x-server. The all-in-one image runs internal
-# nginx + php-fpm + supervisord; outer nginx-ssl proxies to it on :80 via the
-# shared docker_management network.
+# For x-server production deployment, use docker-compose.prod.yml (pulls the
+# prebuilt image from GHCR; see that file for the production flow).
+#
+# This file builds the image locally — useful for testing changes before
+# pushing to main (CI then builds the same Dockerfile and ships via GHCR).
 #
 # Build: DOCKER_BUILDKIT=0 docker compose up -d --build
 # Logs:  docker compose logs -f stm

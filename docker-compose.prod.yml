@@ -1,0 +1,43 @@
+# docker-compose.prod.yml — Simple Task Manager (production)
+#
+# Lives under ~/docker/stm/ on x-server. Pulls the prebuilt image from GHCR
+# instead of building locally; CI (.github/workflows/build-and-deploy.yml) builds
+# and pushes ghcr.io/ibrah5em/stm:latest on every push to main, and Watchtower
+# (label-scoped, running on x-server) rolls this container when the digest changes.
+#
+# Outer nginx-ssl proxies tasks-app.duckdns.org -> 172.18.0.91:80 on docker_management.
+#
+# First deploy:  docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d
+# Logs:          docker compose -f docker-compose.prod.yml logs -f stm
+# Rollback:      change image tag to :sha-<short> and `up -d`
+
+services:
+  stm:
+    image: ghcr.io/ibrah5em/stm:latest
+    container_name: stm
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - stm-db:/var/www/html/database
+      - stm-storage:/var/www/html/storage
+    networks:
+      docker_management:
+        ipv4_address: 172.18.0.91
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O- http://127.0.0.1/up || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    labels:
+      # Watchtower picks up only containers that opt in via this label.
+      com.centurylinklabs.watchtower.enable: "true"
+
+volumes:
+  stm-db:
+  stm-storage:
+
+networks:
+  docker_management:
+    external: true
