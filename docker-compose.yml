@@ -12,6 +12,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      # x-server's default bridge has no MASQUERADE (iptables: false in daemon.json);
+      # build needs docker_management to reach npm/composer/apk over the network.
+      network: docker_management
     image: stm:latest
     container_name: stm
     restart: unless-stopped
