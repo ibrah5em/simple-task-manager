@@ -265,6 +265,11 @@
         .sidebar.collapsed .sidebar-collapse-btn {
             transform: rotate(180deg);
         }
+        .sidebar.collapsed .sidebar-footer .d-flex {
+            flex-direction: column;
+            align-items: center;
+            gap: .5rem;
+        }
         .sidebar-wrapper {
             position: relative;
         }
@@ -692,7 +697,7 @@
             </a>
             <a href="{{ route('inbox') }}"
                class="nav-link {{ request()->routeIs('inbox') ? 'active' : '' }} mb-1 d-flex align-items-center justify-content-between">
-                <span><i class="bi bi-tray me-1"></i> Inbox</span>
+                <span><i class="bi bi-inbox me-1"></i> Inbox</span>
                 @auth @if(($inboxCount ?? 0) > 0)
                 <span class="badge rounded-pill" style="background:var(--purple-500);font-size:.65rem;">{{ $inboxCount }}</span>
                 @endif @endauth
@@ -768,7 +773,7 @@
                 </a>
                 <a href="{{ route('inbox') }}"
                    class="nav-link {{ request()->routeIs('inbox') ? 'active' : '' }} mb-1">
-                    <i class="bi bi-tray" style="flex-shrink:0;"></i>
+                    <i class="bi bi-inbox" style="flex-shrink:0;"></i>
                     <span class="nav-label flex-grow-1">Inbox</span>
                     @auth @if(($inboxCount ?? 0) > 0)
                     <span class="nav-label badge rounded-pill ms-auto" style="background:var(--purple-500);font-size:.65rem;">{{ $inboxCount }}</span>
